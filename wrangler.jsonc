@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "monefy-web",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-29",
+  "observability": {
+    "enabled": true,
+    "traces": { "enabled": true },
+  },
+  "assets": {
+    "directory": "./web/dist",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"],
+  },
+  "queues": {
+    // Create once with `npx wrangler queues create monefy-imports`
+    "producers": [{ "binding": "IMPORT_QUEUE", "queue": "monefy-imports" }],
+    "consumers": [
+      {
+        "queue": "monefy-imports",
+        "max_batch_size": 1,
+        "max_retries": 3,
+      },
+    ],
+  },
+  // Secret (set in dashboard or `npx wrangler secret put API_KEY`): API_KEY
+}

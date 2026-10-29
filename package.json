@@ -1,0 +1,26 @@
+{
+  "name": "monefy-web",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "web"
+  ],
+  "scripts": {
+    "dev:api": "wrangler dev",
+    "dev:web": "npm run dev -w web",
+    "build": "npm run build -w web",
+    "deploy": "npm run build && wrangler deploy",
+    "types": "wrangler types --env-file .dev.vars.example",
+    "typecheck": "npm run types && tsc --noEmit && npm run typecheck -w web",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "hono": "^4.6.0"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.10",
+    "typescript": "^5.6.0",
+    "wrangler": "^4.156.0"
+  }
+}

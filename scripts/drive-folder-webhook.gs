@@ -17,7 +17,10 @@ function checkChanges() {
     var folder = DriveApp.getFolderById(cfg.folderId);
     var lastSeen = props.getProperty(LAST_SEEN);
 
-    if (!lastSeen) { props.setProperty(LAST_SEEN, new Date().toISOString()); return; }
+    if (!lastSeen) {
+      props.setProperty(LAST_SEEN, new Date().toISOString());
+      return;
+    }
 
     // DriveApp uses Drive API v2, which has no searchable createdDate. A new file's
     // modifiedDate is >= its creation time, so search by modifiedDate and keep the
@@ -40,13 +43,15 @@ function checkChanges() {
     });
 
     if (files.length) {
-      files.sort(function (a, b) { return a.createdAt < b.createdAt ? -1 : 1; });
+      files.sort(function (a, b) {
+        return a.createdAt < b.createdAt ? -1 : 1;
+      });
       send_(cfg, {
         folderId: cfg.folderId,
         folderName: folder.getName(),
         detectedAt: runStart.toISOString(),
         count: files.length,
-        files: files
+        files: files,
       });
     }
     // Advance only after a successful run; send failures throw and retry next run.
@@ -65,7 +70,7 @@ function describe_(f) {
     url: f.getUrl(),
     size: f.getSize(),
     createdAt: f.getDateCreated().toISOString(),
-    owner: owner ? owner.getEmail() : null
+    owner: owner ? owner.getEmail() : null,
   };
 }
 
@@ -75,15 +80,19 @@ function send_(cfg, payload) {
     contentType: 'application/json',
     payload: JSON.stringify(payload),
     headers: { 'X-API-Key': cfg.apiKey },
-    muteHttpExceptions: true
+    muteHttpExceptions: true,
   });
   var code = res.getResponseCode();
-  if (code < 200 || code >= 300) throw new Error('Webhook returned ' + code + ': ' + res.getContentText().slice(0, 300));
+  if (code < 200 || code >= 300)
+    throw new Error('Webhook returned ' + code + ': ' + res.getContentText().slice(0, 300));
 }
 
 function getConfig_(p) {
-  var folder = p.getProperty('FOLDER'), url = p.getProperty('WEBHOOK_URL'), apiKey = p.getProperty('API_KEY');
-  if (!folder || !url || !apiKey) throw new Error('Set FOLDER, WEBHOOK_URL and API_KEY script properties');
+  var folder = p.getProperty('FOLDER'),
+    url = p.getProperty('WEBHOOK_URL'),
+    apiKey = p.getProperty('API_KEY');
+  if (!folder || !url || !apiKey)
+    throw new Error('Set FOLDER, WEBHOOK_URL and API_KEY script properties');
   var m = folder.match(/[-\w]{25,}/); // raw ID or .../folders/<id> URL
   return { folderId: m ? m[0] : folder, url: url, apiKey: apiKey };
 }
