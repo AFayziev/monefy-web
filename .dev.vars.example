@@ -1,2 +1,0 @@
-# Copy to .dev.vars for `npm run dev` (local only, ignored by git)
-API_KEY=change-me

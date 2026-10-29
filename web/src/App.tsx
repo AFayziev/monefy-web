@@ -1,19 +1,48 @@
+import { Show, SignInButton, UserButton } from '@clerk/react';
 import { useEffect, useState } from 'react';
+import { useApi } from './api';
 
-export default function App() {
-  const [apiOk, setApiOk] = useState<boolean | null>(null);
+function Landing() {
+  return (
+    <main>
+      <h1>Monefy web viewer</h1>
+      <p>Your expenses from the Monefy app, in one place.</p>
+      <SignInButton />
+    </main>
+  );
+}
+
+function Home() {
+  const api = useApi();
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/health')
-      .then((r) => r.json() as Promise<{ ok: boolean }>)
-      .then((d) => setApiOk(d.ok))
-      .catch(() => setApiOk(false));
-  }, []);
+    api('/api/me')
+      .then((r) => r.json() as Promise<{ userId: string }>)
+      .then((d) => setUserId(d.userId))
+      .catch(() => setUserId(null));
+  }, [api]);
 
   return (
     <main>
-      <h1>monefy-web</h1>
-      <p>API: {apiOk === null ? 'checking…' : apiOk ? 'ok' : 'unreachable'}</p>
+      <header>
+        <h1>Home</h1>
+        <UserButton />
+      </header>
+      <p>Signed in as {userId ?? '…'}</p>
     </main>
+  );
+}
+
+export default function App() {
+  return (
+    <>
+      <Show when="signed-out">
+        <Landing />
+      </Show>
+      <Show when="signed-in">
+        <Home />
+      </Show>
+    </>
   );
 }

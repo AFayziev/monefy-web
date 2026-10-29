@@ -10,12 +10,13 @@
     "dev:web": "npm run dev -w web",
     "build": "npm run build -w web",
     "deploy": "npm run build && wrangler deploy",
-    "types": "wrangler types --env-file .dev.vars.example",
+    "types": "wrangler types --env-file .env.example",
     "typecheck": "npm run types && tsc --noEmit && npm run typecheck -w web",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "@clerk/hono": "^0.1.95",
     "hono": "^4.6.0"
   },
   "devDependencies": {

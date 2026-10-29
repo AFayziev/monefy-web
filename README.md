@@ -6,7 +6,7 @@ A web app to sync and view expenses from [Monefy smartphone app](https://www.mon
 
 ```sh
 npm install
-cp .dev.vars.example .dev.vars    # sets API_KEY
+cp .env.example .env               # Environment variables read by wrangler and Vite
 npm run build                      # wrangler needs web/dist to exist
 npm run dev:api                    # Worker on http://localhost:8787
 npm run dev:web                    # Vite on http://localhost:5173, proxies /api to the Worker
@@ -14,11 +14,16 @@ npm run dev:web                    # Vite on http://localhost:5173, proxies /api
 
 `npm run typecheck` regenerates `worker-configuration.d.ts` (git-ignored) and checks both projects.
 
+## Clerk
+
+1. Create an application at [clerk.com](https://clerk.com).
+2. Put the publishable and secret keys in `.env`.
+
 ## Deploy (Cloudflare, from GitHub)
 
-1. Create the queue once (`npx wrangler login` first): `npx wrangler queues create monefy-imports`
-2. In the Cloudflare dashboard: **Workers & Pages → Create → Import a repository**, pick this repo. Set the build command to `npm run build`; keep the default deploy command `npx wrangler deploy`.
-3. Add the secret **API_KEY** under the Worker's **Settings → Variables and Secrets**.
+1. In the Cloudflare dashboard: **Workers & Pages → Create → Import a repository**, pick this repo. Set the build command to `npm run build`; keep the default deploy command `npx wrangler deploy`.
+2. Add the secrets **API_KEY**, **CLERK_SECRET_KEY** and **PUBLIC_CLERK_PUBLISHABLE_KEY** under the Worker's **Settings → Variables and Secrets**.
+3. Add the build variable **PUBLIC_CLERK_PUBLISHABLE_KEY** under **Settings → Build → Variables and secrets**.
 
 ## Google Apps Script
 
