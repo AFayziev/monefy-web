@@ -426,3 +426,9 @@ FodyWeavers.xsd
 
 # Official VS Code C# Dev Kit Extension exclusion
 #*.lscache
+
+# Environment files (keep .env.example checked in)
+.env
+.env.*
+*.env
+!.env.example
