@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { clerk, requireUser } from '../auth';
+import { versionedCache } from '../cache';
 import { createDb } from '../db';
 import { validate } from '../http';
 import { DefaultAccountBody, StatsQuery, TransactionsQuery } from '../schemas';
@@ -8,6 +9,7 @@ export const dashboard = new Hono<{ Bindings: Env }>();
 
 dashboard.use(clerk);
 dashboard.use(requireUser);
+dashboard.use(versionedCache);
 
 dashboard.get('/accounts', async (context) =>
   context.json(await createDb(context.env.DB).dashboard.overview()),

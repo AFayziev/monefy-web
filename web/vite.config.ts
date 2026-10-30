@@ -8,4 +8,23 @@ export default defineConfig({
   envDir: '..',
   envPrefix: ['PUBLIC_'],
   server: { proxy: { '/api': 'http://localhost:8787' } },
+  // Libraries get their own chunks, so a change to app code doesn't re-download them.
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            {
+              name: 'react',
+              test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/,
+              priority: 2,
+            },
+            { name: 'clerk', test: /node_modules[\\/]@clerk[\\/]/, priority: 2 },
+            { name: 'mantine', test: /node_modules[\\/]@mantine[\\/]/, priority: 2 },
+            { name: 'vendor', test: /node_modules[\\/]/, priority: 1 },
+          ],
+        },
+      },
+    },
+  },
 });

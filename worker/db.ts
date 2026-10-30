@@ -42,8 +42,32 @@ const ImportStatus = {
   failed: 'failed',
 } as const;
 
-/** D1's free plan allows ~50 queries per invocation; leave room for the select and bookkeeping. */
-const MAX_WRITE_STATEMENTS = 42;
+const DATA_VERSION_KEY = 'data_version';
+
+/** Bumps the version dashboard responses are cached under, so the cache misses after a change. */
+const BUMP_VERSION_SQL =
+  `INSERT INTO settings (key, value) VALUES ('${DATA_VERSION_KEY}', '1') ` +
+  `ON CONFLICT(key) DO UPDATE SET value = CAST(value AS INTEGER) + 1`;
+
+/** Rebuilds the summaries the dashboard overview reads; mirrors migrations/0004_summaries.sql. */
+const REFRESH_SUMMARIES_SQL = [
+  'DELETE FROM account_summaries',
+  `INSERT INTO account_summaries
+   SELECT account, currency, SUM(amount), SUM(converted_amount), COUNT(*)
+   FROM transactions WHERE deleted_at IS NULL GROUP BY account, currency`,
+  'DELETE FROM category_summaries',
+  // Transfer and initial-balance labels are not categories worth filtering by.
+  `INSERT INTO category_summaries
+   SELECT category, COUNT(*) FROM transactions
+   WHERE deleted_at IS NULL AND kind IN ('expense', 'income') GROUP BY category`,
+  BUMP_VERSION_SQL,
+];
+
+/**
+ * D1's free plan allows ~50 queries per invocation; leave room for the select, the summary
+ * refresh and bookkeeping.
+ */
+const MAX_WRITE_STATEMENTS = 42 - REFRESH_SUMMARIES_SQL.length;
 
 /**
  * Size of the JSON array each statement carries as its one bound parameter. D1 caps a statement
@@ -283,8 +307,12 @@ export function createDb(d1: D1Database) {
           more: statements.length > MAX_WRITE_STATEMENTS,
         };
 
+        // The summaries are rebuilt in the same transaction, so they never disagree with the rows.
         if (statementsToRun.length) {
-          await d1.batch(statementsToRun.map(({ statement }) => statement));
+          await d1.batch([
+            ...statementsToRun.map(({ statement }) => statement),
+            ...REFRESH_SUMMARIES_SQL.map((sql) => d1.prepare(sql)),
+          ]);
         }
 
         for (const { kind, itemCount } of statementsToRun) {
@@ -309,17 +337,10 @@ export function createDb(d1: D1Database) {
       async overview(): Promise<Overview> {
         const [accounts, categories, currency, starred] = await d1.batch([
           d1.prepare(
-            `SELECT account, currency, SUM(amount) AS balance,
-               SUM(converted_amount) AS convertedBalance, COUNT(*) AS count
-             FROM transactions WHERE deleted_at IS NULL
-             GROUP BY account, currency ORDER BY count DESC`,
+            `SELECT account, currency, balance, converted_balance AS convertedBalance, count
+             FROM account_summaries ORDER BY count DESC`,
           ),
-          // Transfer and initial-balance labels are not categories worth filtering by.
-          d1.prepare(
-            `SELECT category FROM transactions
-             WHERE deleted_at IS NULL AND kind IN ('expense', 'income')
-             GROUP BY category ORDER BY COUNT(*) DESC`,
-          ),
+          d1.prepare('SELECT category FROM category_summaries ORDER BY count DESC'),
           // Monefy converts every row into its one main currency, so any row has it: reading one
           // row avoids scanning the whole table.
           d1.prepare(
@@ -440,14 +461,26 @@ export function createDb(d1: D1Database) {
     },
 
     settings: {
+      /** The version dashboard responses are cached under; it changes whenever the data does. */
+      async dataVersion(): Promise<string> {
+        const row = await d1
+          .prepare('SELECT value FROM settings WHERE key = ?1')
+          .bind(DATA_VERSION_KEY)
+          .first<{ value: string }>();
+
+        return row?.value ?? '0';
+      },
+
       async setDefaultAccount(account: string): Promise<void> {
-        await d1
-          .prepare(
-            'INSERT INTO settings (key, value) VALUES (?1, ?2) ' +
-              'ON CONFLICT(key) DO UPDATE SET value = excluded.value',
-          )
-          .bind(DEFAULT_ACCOUNT_KEY, account)
-          .run();
+        await d1.batch([
+          d1
+            .prepare(
+              'INSERT INTO settings (key, value) VALUES (?1, ?2) ' +
+                'ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+            )
+            .bind(DEFAULT_ACCOUNT_KEY, account),
+          d1.prepare(BUMP_VERSION_SQL),
+        ]);
       },
     },
 

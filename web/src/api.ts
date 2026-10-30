@@ -1,6 +1,26 @@
 import { useAuth } from '@clerk/react';
 import { useCallback } from 'react';
 
+export class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+/** The server's `{ error, message? }` body when it sent one, otherwise the HTTP status. */
+async function errorMessage(response: Response): Promise<string> {
+  try {
+    const body = (await response.json()) as { error?: string; message?: string };
+
+    return body.message ?? body.error ?? `HTTP ${response.status}`;
+  } catch {
+    return `HTTP ${response.status}`;
+  }
+}
+
 /** fetch() for guarded API routes: adds the Clerk session token as a Bearer token. */
 export function useApi() {
   const { getToken } = useAuth();
@@ -36,7 +56,7 @@ export function useApiJson() {
       );
 
       if (!response.ok) {
-        throw new Error(`${path}: ${response.status}`);
+        throw new ApiError(response.status, await errorMessage(response));
       }
 
       return response.json() as Promise<T>;
