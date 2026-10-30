@@ -13,8 +13,8 @@ export default function Landing() {
       }}
     >
       <Stack align="center" gap="lg" maw={460} ta="center">
-        <Logo size={56} />
-        <Title order={1} fw={700}>
+        <Logo size={80} />
+        <Title order={1} fw={700} c="gray.7">
           Monefy web viewer
         </Title>
         <Text c="dimmed" fz="lg">

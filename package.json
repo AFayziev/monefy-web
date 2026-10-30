@@ -6,6 +6,7 @@
     "web"
   ],
   "scripts": {
+    "dev": "node scripts/dev.mjs",
     "dev:api": "wrangler dev",
     "dev:web": "npm run dev -w web",
     "build": "npm run build -w web",

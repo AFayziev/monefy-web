@@ -7,10 +7,10 @@ A web app to sync and view expenses from [Monefy smartphone app](https://www.mon
 ```sh
 npm install
 cp .env.example .env               # Environment variables read by wrangler and Vite
-npm run build                      # wrangler needs web/dist to exist
-npm run dev:api                    # Worker on http://localhost:8787
-npm run dev:web                    # Vite on http://localhost:5173, proxies /api to the Worker
+npm run dev                        # runs the Worker and the Vite app together
 ```
+
+`npm run dev:api` and `npm run dev:web` run either one on its own.
 
 `npm run typecheck` regenerates `worker-configuration.d.ts` (git-ignored) and checks both projects.
 
