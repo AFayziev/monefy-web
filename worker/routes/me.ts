@@ -7,4 +7,4 @@ export const me = new Hono<{ Bindings: Env }>();
 me.use(clerk);
 me.use(requireUser);
 
-me.get('/', (c) => c.json({ userId: getAuth(c)?.userId }));
+me.get('/', (context) => context.json({ userId: getAuth(context)?.userId }));

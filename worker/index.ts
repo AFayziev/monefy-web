@@ -5,7 +5,7 @@ import { webhook } from './routes/webhook';
 
 const app = new Hono<{ Bindings: Env }>();
 
-app.get('/api/health', (c) => c.json({ ok: true }));
+app.get('/api/health', (context) => context.json({ ok: true }));
 app.route('/api/me', me);
 app.route('/api/webhook', webhook);
 

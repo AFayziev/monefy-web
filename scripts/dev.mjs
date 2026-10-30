@@ -16,28 +16,43 @@ const children = [
 
 function start(name, color, command, args) {
   const child = spawn(command, args, { shell: isWindows, stdio: ['inherit', 'pipe', 'pipe'] });
+
   for (const stream of [child.stdout, child.stderr]) {
     createInterface({ input: stream }).on('line', (line) =>
       console.log(`${color}[${name}]\x1b[0m ${line}`),
     );
   }
+
   child.on('exit', (code) => {
     console.log(`[${name}] exited with code ${code}`);
     stopAll(code ?? 1);
   });
+
   return child;
 }
 
 let stopping = false;
+
 function stopAll(exitCode = 0) {
-  if (stopping) return;
-  stopping = true;
-  for (const child of children) {
-    if (child.exitCode !== null || !child.pid) continue;
-    // On Windows the shell wrapper must be killed together with its process tree.
-    if (isWindows) spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F']);
-    else child.kill('SIGTERM');
+  if (stopping) {
+    return;
   }
+
+  stopping = true;
+
+  for (const child of children) {
+    if (child.exitCode !== null || !child.pid) {
+      continue;
+    }
+
+    // On Windows the shell wrapper must be killed together with its process tree.
+    if (isWindows) {
+      spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F']);
+    } else {
+      child.kill('SIGTERM');
+    }
+  }
+
   process.exit(exitCode);
 }
 
