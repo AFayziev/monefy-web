@@ -16,3 +16,31 @@ export function useApi() {
     [getToken],
   );
 }
+
+/** Guarded API call that sends `body` as JSON and returns the parsed response, or throws. */
+export function useApiJson() {
+  const api = useApi();
+
+  return useCallback(
+    async <T>(path: string, init: Omit<RequestInit, 'body'> & { body?: unknown } = {}) => {
+      const { body, ...rest } = init;
+      const response = await api(
+        path,
+        body === undefined
+          ? rest
+          : {
+              ...rest,
+              headers: { 'Content-Type': 'application/json', ...rest.headers },
+              body: JSON.stringify(body),
+            },
+      );
+
+      if (!response.ok) {
+        throw new Error(`${path}: ${response.status}`);
+      }
+
+      return response.json() as Promise<T>;
+    },
+    [api],
+  );
+}

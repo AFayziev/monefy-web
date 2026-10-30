@@ -1,24 +1,28 @@
 import { Hono } from 'hono';
+import { createMiddleware } from 'hono/factory';
 import { HTTP_UNAUTHORIZED, hasValidApiKey } from '../auth';
+import { validate } from '../http';
+import { WebhookBody } from '../schemas';
 
 const API_KEY_HEADER = 'x-api-key';
-const HTTP_BAD_REQUEST = 400;
 
 /** Queues.sendBatch accepts at most 100 messages per call. */
 const QUEUE_BATCH_LIMIT = 100;
 
-export const webhook = new Hono<{ Bindings: Env }>();
-
-webhook.post('/', async (context) => {
+const requireApiKey = createMiddleware<{ Bindings: Env }>(async (context, next) => {
   if (!(await hasValidApiKey(context.req.header(API_KEY_HEADER), context.env.API_KEY))) {
     return context.json({ error: 'unauthorized' }, HTTP_UNAUTHORIZED);
   }
 
-  const body = await context.req.json<{ files?: unknown[] }>().catch(() => null);
+  await next();
+});
 
-  if (!body || !Array.isArray(body.files)) {
-    return context.json({ error: 'expected { files: [...] }' }, HTTP_BAD_REQUEST);
-  }
+export const webhook = new Hono<{ Bindings: Env }>();
+
+webhook.use(requireApiKey);
+
+webhook.post('/', validate('json', WebhookBody), async (context) => {
+  const body = context.req.valid('json');
 
   // One queue message per file, passed through exactly as the Apps Script sent it.
   for (let start = 0; start < body.files.length; start += QUEUE_BATCH_LIMIT) {

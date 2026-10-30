@@ -1,6 +1,31 @@
 import { UserButton } from '@clerk/react';
-import { AppShell, Group, Title } from '@mantine/core';
+import {
+  ActionIcon,
+  AppShell,
+  Group,
+  Title,
+  useComputedColorScheme,
+  useMantineColorScheme,
+} from '@mantine/core';
+import { IconMoon, IconSun } from '@tabler/icons-react';
 import Logo from '../components/Logo';
+import Dashboard from '../pages/Dashboard';
+
+function ColorSchemeToggle() {
+  const { setColorScheme } = useMantineColorScheme();
+  const scheme = useComputedColorScheme('light');
+
+  return (
+    <ActionIcon
+      variant="default"
+      size="lg"
+      aria-label="Toggle color scheme"
+      onClick={() => setColorScheme(scheme === 'dark' ? 'light' : 'dark')}
+    >
+      {scheme === 'dark' ? <IconSun size={18} /> : <IconMoon size={18} />}
+    </ActionIcon>
+  );
+}
 
 export default function AppLayout() {
   return (
@@ -13,10 +38,15 @@ export default function AppLayout() {
               Monefy web viewer
             </Title>
           </Group>
-          <UserButton />
+          <Group gap="sm">
+            <ColorSchemeToggle />
+            <UserButton />
+          </Group>
         </Group>
       </AppShell.Header>
-      <AppShell.Main />
+      <AppShell.Main bg="var(--app-background)">
+        <Dashboard />
+      </AppShell.Main>
     </AppShell>
   );
 }

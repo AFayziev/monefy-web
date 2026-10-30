@@ -1,13 +1,9 @@
+import * as valibot from 'valibot';
 import { createDb } from './db';
 import { downloadDriveFile } from './google';
 import { importCsv } from './import/run';
 import { CsvFormatError } from './import/parse';
-
-interface DriveFile {
-  id: string;
-  name?: string;
-  mimeType?: string;
-}
+import { DriveFile } from './schemas';
 
 const CSV_MIME_TYPE = 'text/csv';
 const CSV_FILE_NAME = /\.csv$/i;
@@ -19,14 +15,16 @@ export async function handleImportQueue(batch: MessageBatch<unknown>, env: Env):
   const db = createDb(env.DB);
 
   for (const message of batch.messages) {
-    const file = message.body as DriveFile;
+    const parsed = valibot.safeParse(DriveFile, message.body);
 
-    if (!file?.id || !isCsv(file)) {
-      console.log(JSON.stringify({ msg: 'skipped file', file }));
+    if (!parsed.success || !isCsv(parsed.output)) {
+      console.log(JSON.stringify({ msg: 'skipped file', file: message.body }));
       message.ack();
 
       continue;
     }
+
+    const file = parsed.output;
 
     let importId: number | undefined;
 

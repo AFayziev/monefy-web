@@ -1,4 +1,4 @@
-import { createTheme, type MantineColorsTuple } from '@mantine/core';
+import { createTheme, type CSSVariablesResolver, type MantineColorsTuple } from '@mantine/core';
 
 export const brand: MantineColorsTuple = [
   '#e7fcf0',
@@ -12,6 +12,18 @@ export const brand: MantineColorsTuple = [
   '#378c5d',
   '#27794e',
 ];
+
+/** Page background behind the cards, and the dark scheme's green-tinted surfaces and borders. */
+export const cssVariablesResolver: CSSVariablesResolver = () => ({
+  variables: {},
+  light: { '--app-background': '#f8faf9' },
+  dark: {
+    '--app-background': '#141816',
+    '--mantine-color-body': '#1c211e',
+    '--mantine-color-default': '#1c211e',
+    '--mantine-color-default-border': '#2b322e',
+  },
+});
 
 export const theme = createTheme({
   primaryColor: 'brand',
