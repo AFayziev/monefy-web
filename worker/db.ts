@@ -320,9 +320,10 @@ export function createDb(d1: D1Database) {
              WHERE deleted_at IS NULL AND kind IN ('expense', 'income')
              GROUP BY category ORDER BY COUNT(*) DESC`,
           ),
+          // Monefy converts every row into its one main currency, so any row has it: reading one
+          // row avoids scanning the whole table.
           d1.prepare(
-            `SELECT converted_currency FROM transactions WHERE deleted_at IS NULL
-             GROUP BY converted_currency ORDER BY COUNT(*) DESC LIMIT 1`,
+            'SELECT converted_currency FROM transactions WHERE deleted_at IS NULL LIMIT 1',
           ),
           d1.prepare('SELECT value FROM settings WHERE key = ?1').bind(DEFAULT_ACCOUNT_KEY),
         ]);
