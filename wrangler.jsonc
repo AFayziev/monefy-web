@@ -40,6 +40,10 @@
       },
     ],
   },
+  // Refreshes exchange rates (worker/rates.ts).
+  "triggers": {
+    "crons": ["0 1 * * *"],
+  },
   "d1_databases": [
     {
       "binding": "DB",
@@ -51,5 +55,6 @@
   "workers_dev": true,
   "preview_urls": true,
   // No keys live in this file. Set these as Worker secrets (dashboard or `npx wrangler secret put <NAME>`):
-  // API_KEY, CLERK_SECRET_KEY, PUBLIC_CLERK_PUBLISHABLE_KEY, GOOGLE_SERVICE_ACCOUNT
+  // API_KEY, CLERK_SECRET_KEY, PUBLIC_CLERK_PUBLISHABLE_KEY, GOOGLE_SERVICE_ACCOUNT,
+  // EXCHANGE_RATES_URL, EXCHANGE_RATES_BASE
 }

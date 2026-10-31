@@ -10,7 +10,7 @@ export interface AccountSummary {
   currency: string;
   /** In the account's own currency, minor units. */
   balance: number;
-  /** In the export's converted currency, minor units. */
+  /** In the export's converted currency at the current rate, minor units. */
   convertedBalance: number;
   count: number;
 }

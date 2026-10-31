@@ -1,21 +1,10 @@
 import { Hono } from 'hono';
-import { createMiddleware } from 'hono/factory';
-import { HTTP_UNAUTHORIZED, hasValidApiKey } from '../auth';
+import { requireApiKey } from '../auth';
 import { validate } from '../http';
 import { WebhookBody } from '../schemas';
 
-const API_KEY_HEADER = 'x-api-key';
-
 /** Queues.sendBatch accepts at most 100 messages per call. */
 const QUEUE_BATCH_LIMIT = 100;
-
-const requireApiKey = createMiddleware<{ Bindings: Env }>(async (context, next) => {
-  if (!(await hasValidApiKey(context.req.header(API_KEY_HEADER), context.env.API_KEY))) {
-    return context.json({ error: 'unauthorized' }, HTTP_UNAUTHORIZED);
-  }
-
-  await next();
-});
 
 export const webhook = new Hono<{ Bindings: Env }>();
 

@@ -1,6 +1,7 @@
 import { clerkMiddleware, getAuth } from '@clerk/hono';
 import { createMiddleware } from 'hono/factory';
 
+const API_KEY_HEADER = 'x-api-key';
 const DIGEST_ALGORITHM = 'SHA-256';
 
 export const HTTP_UNAUTHORIZED = 401;
@@ -22,6 +23,14 @@ export async function hasValidApiKey(
 
   return crypto.subtle.timingSafeEqual(providedDigest, expectedDigest);
 }
+
+export const requireApiKey = createMiddleware<{ Bindings: Env }>(async (context, next) => {
+  if (!(await hasValidApiKey(context.req.header(API_KEY_HEADER), context.env.API_KEY))) {
+    return context.json({ error: 'unauthorized' }, HTTP_UNAUTHORIZED);
+  }
+
+  await next();
+});
 
 /** Clerk session middleware; the publishable key comes from the shared PUBLIC_ variable. */
 export const clerk = createMiddleware<{ Bindings: Env }>((ctx, next) =>

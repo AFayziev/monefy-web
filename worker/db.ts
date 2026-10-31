@@ -49,12 +49,16 @@ const BUMP_VERSION_SQL =
   `INSERT INTO settings (key, value) VALUES ('${DATA_VERSION_KEY}', '1') ` +
   `ON CONFLICT(key) DO UPDATE SET value = CAST(value AS INTEGER) + 1`;
 
-/** Rebuilds the summaries the dashboard overview reads; mirrors migrations/0004_summaries.sql. */
+/** Rebuilds the summaries the dashboard overview reads */
 const REFRESH_SUMMARIES_SQL = [
   'DELETE FROM account_summaries',
-  `INSERT INTO account_summaries
-   SELECT account, currency, SUM(amount), SUM(converted_amount), COUNT(*)
-   FROM transactions WHERE deleted_at IS NULL GROUP BY account, currency`,
+  `INSERT INTO account_summaries (account, currency, balance, count, last_rate)
+   SELECT account, currency, SUM(amount), COUNT(*),
+     (SELECT 1.0 * latest.converted_amount / latest.amount FROM transactions latest
+      WHERE latest.account = t.account AND latest.currency = t.currency
+        AND latest.deleted_at IS NULL AND latest.amount <> 0
+      ORDER BY latest.date DESC, latest.rowid DESC LIMIT 1)
+   FROM transactions t WHERE deleted_at IS NULL GROUP BY account, currency`,
   'DELETE FROM category_summaries',
   // Transfer and initial-balance labels are not categories worth filtering by.
   `INSERT INTO category_summaries
@@ -338,8 +342,10 @@ export function createDb(d1: D1Database) {
       async overview(): Promise<Overview> {
         const [accounts, categories, currency, starred] = await d1.batch([
           d1.prepare(
-            `SELECT account, currency, balance, converted_balance AS convertedBalance, count
-             FROM account_summaries ORDER BY count DESC`,
+            `SELECT account, currency, balance, count,
+               ROUND(balance * COALESCE(rate, last_rate, 0)) AS convertedBalance
+             FROM account_summaries LEFT JOIN exchange_rates USING (currency)
+             ORDER BY count DESC`,
           ),
           d1.prepare('SELECT category FROM category_summaries ORDER BY count DESC'),
           // Monefy converts every row into its one main currency, so any row has it: reading one
@@ -461,6 +467,46 @@ export function createDb(d1: D1Database) {
           days: days.results as DayTotal[],
           heatmap: heatmap.results as { date: string; expense: number }[],
         };
+      },
+    },
+
+    rates: {
+      /** `base` is the currency the rates are quoted in. */
+      async save(rates: { currency: string; rate: number }[], base: string): Promise<void> {
+        const [accounts, currency] = await d1.batch([
+          d1.prepare('SELECT DISTINCT currency FROM account_summaries'),
+          d1.prepare(
+            'SELECT converted_currency FROM transactions WHERE deleted_at IS NULL LIMIT 1',
+          ),
+        ]);
+        const needed = new Set(
+          (accounts.results as { currency: string }[]).map((row) => row.currency),
+        );
+        const exportBase = (currency.results[0] as { converted_currency: string } | undefined)
+          ?.converted_currency;
+        const upsert = d1.prepare(
+          `INSERT INTO exchange_rates (currency, rate) VALUES (?1, ?2)
+           ON CONFLICT(currency) DO UPDATE SET rate = excluded.rate
+           WHERE rate <> excluded.rate`,
+        );
+        // Rates quoted in another currency than the export's don't apply.
+        const statements =
+          exportBase === base
+            ? rates
+                .filter((rate) => needed.has(rate.currency))
+                .map((rate) => upsert.bind(rate.currency, rate.rate))
+            : [d1.prepare('DELETE FROM exchange_rates')];
+
+        if (statements.length === 0) {
+          return;
+        }
+
+        // Keep the dashboard cache unless a rate changed.
+        const upserts = await d1.batch(statements);
+
+        if (upserts.some((result) => result.meta.changes > 0)) {
+          await d1.prepare(BUMP_VERSION_SQL).run();
+        }
       },
     },
 

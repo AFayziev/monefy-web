@@ -1,5 +1,7 @@
 import { Hono } from 'hono';
 import { handleImportQueue } from './queue';
+import { refreshRates } from './rates';
+import { rates } from './routes/rates';
 import { dashboard } from './routes/dashboard';
 import { me } from './routes/me';
 import { webhook } from './routes/webhook';
@@ -21,8 +23,10 @@ app.get('/api/health', (context) => context.json({ ok: true }));
 app.route('/api/me', me);
 app.route('/api/webhook', webhook);
 app.route('/api/dashboard', dashboard);
+app.route('/api/rates', rates);
 
 export default {
   fetch: app.fetch,
   queue: handleImportQueue,
+  scheduled: (_controller, env) => refreshRates(env),
 } satisfies ExportedHandler<Env, unknown>;
