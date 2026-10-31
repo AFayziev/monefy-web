@@ -68,7 +68,8 @@ export interface TransactionsPage {
 export interface Overview {
   accounts: AccountSummary[];
   categories: string[];
-  baseCurrency: string;
+  /** Null while the database is empty. */
+  baseCurrency: string | null;
   /** The starred account; null when none is starred or it no longer exists. */
   defaultAccount: string | null;
 }

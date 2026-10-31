@@ -222,8 +222,6 @@ const MAX_DAILY_BUCKETS = 62;
 const DAY_MS = 86_400_000;
 
 const DEFAULT_ACCOUNT_KEY = 'default_account';
-/** Used only while the database is empty. */
-const DEFAULT_BASE_CURRENCY = 'UZS';
 
 const addDays = (isoDate: string, days: number) =>
   new Date(Date.parse(isoDate) + days * DAY_MS).toISOString().slice(0, 10);
@@ -275,8 +273,11 @@ function buildWhere(filter: DashboardFilter, alias = ''): Where {
   return { sql: conditions.join(' AND '), params };
 }
 
-const EXPENSE_SUM = `-SUM(CASE WHEN kind = 'expense' THEN converted_amount ELSE 0 END)`;
-const INCOME_SUM = `SUM(CASE WHEN kind = 'income' THEN converted_amount ELSE 0 END)`;
+/**
+ * One account is in a single currency, so its own amounts are exact; across accounts only the
+ * converted ones add up.
+ */
+const amountColumn = (filter: DashboardFilter) => (filter.account ? 'amount' : 'converted_amount');
 
 /** The only place that talks to D1: every query in the Worker goes through this client. */
 export function createDb(d1: D1Database) {
@@ -357,7 +358,7 @@ export function createDb(d1: D1Database) {
           categories: (categories.results as { category: string }[]).map((row) => row.category),
           baseCurrency:
             (currency.results[0] as { converted_currency: string } | undefined)
-              ?.converted_currency ?? DEFAULT_BASE_CURRENCY,
+              ?.converted_currency ?? null,
           // A starred account can disappear after a rename in Monefy; then nothing is starred.
           defaultAccount:
             summaries.find((summary) => summary.account === starredAccount)?.account ?? null,
@@ -420,30 +421,33 @@ export function createDb(d1: D1Database) {
           !filter.from || !filter.to || daysBetween(filter.from, filter.to) > MAX_DAILY_BUCKETS;
         const bucket = byMonth ? 'substr(date, 1, 7)' : 'date';
         const yesterday = addDays(today, -1);
+        const amount = amountColumn(filter);
+        const expenseSum = `-SUM(CASE WHEN kind = 'expense' THEN ${amount} ELSE 0 END)`;
+        const incomeSum = `SUM(CASE WHEN kind = 'income' THEN ${amount} ELSE 0 END)`;
 
         const [flow, categories, days, heatmap] = await d1.batch([
           d1
             .prepare(
-              `SELECT ${bucket} AS bucket, ${EXPENSE_SUM} AS expense, ${INCOME_SUM} AS income
+              `SELECT ${bucket} AS bucket, ${expenseSum} AS expense, ${incomeSum} AS income
                FROM transactions WHERE ${ranged.sql} GROUP BY bucket ORDER BY bucket`,
             )
             .bind(...ranged.params),
           d1
             .prepare(
-              `SELECT category, -SUM(converted_amount) AS expense FROM transactions
+              `SELECT category, -SUM(${amount}) AS expense FROM transactions
                WHERE ${ranged.sql} AND kind = 'expense'
                GROUP BY category ORDER BY expense DESC LIMIT ?`,
             )
             .bind(...ranged.params, TOP_CATEGORIES),
           d1
             .prepare(
-              `SELECT date, kind, SUM(converted_amount) AS total, COUNT(*) AS count
+              `SELECT date, kind, SUM(${amount}) AS total, COUNT(*) AS count
                FROM transactions WHERE ${undated.sql} AND date IN (?, ?) GROUP BY date, kind`,
             )
             .bind(...undated.params, today, yesterday),
           d1
             .prepare(
-              `SELECT date, -SUM(converted_amount) AS expense FROM transactions
+              `SELECT date, -SUM(${amount}) AS expense FROM transactions
                WHERE ${undated.sql} AND kind = 'expense' AND date > ? AND date <= ?
                GROUP BY date`,
             )

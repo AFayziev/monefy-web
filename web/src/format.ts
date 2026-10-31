@@ -8,18 +8,20 @@ const WHOLE_UNIT_CURRENCIES = new Set(['UZS']);
 
 const formatters = new Map<string, Intl.NumberFormat>();
 
-function moneyFormat(currency: string, signDisplay: Intl.NumberFormatOptions['signDisplay']) {
+function moneyFormat(
+  currency: string | null,
+  signDisplay: Intl.NumberFormatOptions['signDisplay'],
+) {
   const key = `${currency}:${signDisplay}`;
   let formatter = formatters.get(key);
 
   if (!formatter) {
     formatter = new Intl.NumberFormat(LOCALE, {
-      style: 'currency',
-      currency,
-      currencyDisplay: 'narrowSymbol',
+      // Without a currency (no data yet), plain numbers.
+      ...(currency && { style: 'currency', currency, currencyDisplay: 'narrowSymbol' }),
       signDisplay,
       trailingZeroDisplay: 'stripIfInteger',
-      ...(WHOLE_UNIT_CURRENCIES.has(currency) && { maximumFractionDigits: 0 }),
+      ...(currency && WHOLE_UNIT_CURRENCIES.has(currency) && { maximumFractionDigits: 0 }),
     });
 
     formatters.set(key, formatter);
@@ -29,15 +31,15 @@ function moneyFormat(currency: string, signDisplay: Intl.NumberFormatOptions['si
 }
 
 /** Unsigned money, e.g. `UZS 1,234,567` or `$1,800`. */
-export const formatMoney = (minorUnits: number, currency: string) =>
+export const formatMoney = (minorUnits: number, currency: string | null) =>
   moneyFormat(currency, 'never').format(minorUnits / MINOR_UNITS_PER_MAJOR);
 
 /** Money with a sign only when negative, e.g. a balance. */
-export const formatBalance = (minorUnits: number, currency: string) =>
+export const formatBalance = (minorUnits: number, currency: string | null) =>
   moneyFormat(currency, 'negative').format(minorUnits / MINOR_UNITS_PER_MAJOR);
 
 /** Money with an explicit + or - sign. */
-export const formatSigned = (minorUnits: number, currency: string) =>
+export const formatSigned = (minorUnits: number, currency: string | null) =>
   moneyFormat(currency, 'exceptZero').format(minorUnits / MINOR_UNITS_PER_MAJOR);
 
 const compactFormat = new Intl.NumberFormat('en-US', {

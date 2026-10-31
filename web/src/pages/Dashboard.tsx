@@ -38,9 +38,14 @@ export default function Dashboard() {
   const transactions = useTransactions(filters, accountChosen);
   const rows = transactions.data?.pages.flatMap((page) => page.rows) ?? [];
   const failed = [overview, stats, transactions].filter((query) => query.isError);
+  const baseCurrency = overview.data?.baseCurrency ?? null;
+  // Stats for one account are summed in its own currency, not converted.
+  const statsCurrency =
+    overview.data?.accounts.find((account) => account.account === filters.account)?.currency ??
+    baseCurrency;
 
   return (
-    <BaseCurrencyContext.Provider value={overview.data?.baseCurrency ?? 'UZS'}>
+    <BaseCurrencyContext.Provider value={baseCurrency}>
       <div className={classes.layout}>
         <AccountsPanel
           accounts={overview.data?.accounts}
@@ -77,16 +82,18 @@ export default function Dashboard() {
             update={update}
             setPreset={setPreset}
           />
-          <KpiCards stats={stats.data} filters={filters} />
-          <SimpleGrid cols={{ base: 1, lg: 2 }}>
-            <DailyFlowChart stats={stats.data} filters={filters} />
-            <TopCategories stats={stats.data} onSelect={(category) => update({ category })} />
-          </SimpleGrid>
-          <ActivityHeatmap
-            stats={stats.data}
-            selected={filters.from && filters.from === filters.to ? filters.from : null}
-            onSelect={selectDay}
-          />
+          <BaseCurrencyContext.Provider value={statsCurrency}>
+            <KpiCards stats={stats.data} filters={filters} />
+            <SimpleGrid cols={{ base: 1, lg: 2 }}>
+              <DailyFlowChart stats={stats.data} filters={filters} />
+              <TopCategories stats={stats.data} onSelect={(category) => update({ category })} />
+            </SimpleGrid>
+            <ActivityHeatmap
+              stats={stats.data}
+              selected={filters.from && filters.from === filters.to ? filters.from : null}
+              onSelect={selectDay}
+            />
+          </BaseCurrencyContext.Provider>
           <TransactionList
             rows={rows}
             total={transactions.data?.pages[0]?.total ?? 0}
