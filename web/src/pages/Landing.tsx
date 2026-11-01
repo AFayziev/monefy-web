@@ -20,7 +20,7 @@ export default function Landing() {
         <Text c="dimmed" fz="lg">
           Your Monefy expenses, synced and in one place.
         </Text>
-        <SignInButton mode="modal">
+        <SignInButton mode="redirect">
           <Button size="md" px="xl">
             Sign in
           </Button>
