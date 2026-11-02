@@ -32,12 +32,16 @@ The Worker downloads the exported CSV from Drive with a Google service account t
    npm run db:migrate
    ```
    Run `npm run db:migrate` again whenever a new file is added to `migrations/`.
-2. In the Cloudflare dashboard: **Workers & Pages → Create → Import a repository**, pick this repo. Set the build command to `npm run build`; keep the default deploy command `npx wrangler deploy`.
-3. Add the secrets **API_KEY**, **CLERK_SECRET_KEY**, **PUBLIC_CLERK_PUBLISHABLE_KEY** and **GOOGLE_SERVICE_ACCOUNT** under the Worker's **Settings → Variables and Secrets**. For the Google key, from the command line:
+2. Create the private R2 bucket for receipt images and leave public access off. Only the Worker reads it:
+   ```sh
+   npx wrangler r2 bucket create monefy-receipts
+   ```
+3. In the Cloudflare dashboard: **Workers & Pages → Create → Import a repository**, pick this repo. Set the build command to `npm run build`; keep the default deploy command `npx wrangler deploy`.
+4. Add the secrets **API_KEY**, **CLERK_SECRET_KEY**, **PUBLIC_CLERK_PUBLISHABLE_KEY** and **GOOGLE_SERVICE_ACCOUNT** under the Worker's **Settings → Variables and Secrets**. For the Google key, from the command line:
    ```sh
    npx wrangler secret put GOOGLE_SERVICE_ACCOUNT < path/to/key.json
    ```
-4. Add the build variable **PUBLIC_CLERK_PUBLISHABLE_KEY** under **Settings → Build → Variables and secrets**.
+5. Add the build variable **PUBLIC_CLERK_PUBLISHABLE_KEY** under **Settings → Build → Variables and secrets**.
 
 ## Google Apps Script
 
