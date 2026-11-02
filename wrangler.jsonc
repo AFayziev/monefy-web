@@ -44,6 +44,13 @@
   "triggers": {
     "crons": ["0 1 * * *"],
   },
+  // Private bucket for payment receipt images; never given a public URL. The Worker is the only reader.
+  "r2_buckets": [
+    {
+      "binding": "RECEIPTS",
+      "bucket_name": "monefy-receipts",
+    },
+  ],
   "d1_databases": [
     {
       "binding": "DB",

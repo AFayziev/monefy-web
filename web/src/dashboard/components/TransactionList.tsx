@@ -3,6 +3,7 @@ import {
   Button,
   Center,
   CloseButton,
+  Indicator,
   Loader,
   Paper,
   Stack,
@@ -11,16 +12,18 @@ import {
   ThemeIcon,
   Tooltip,
 } from '@mantine/core';
-import { IconArrowRight, IconInbox, IconList, IconSearch } from '@tabler/icons-react';
+import { IconArrowRight, IconInbox, IconList, IconReceipt, IconSearch } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import { Fragment, useState } from 'react';
-import { formatMoney, formatSigned } from '../format';
+import { formatMoney, formatSigned } from '../../format';
 import { CardTitle } from './CardTitle';
-import { useBaseCurrency } from './currency';
-import { today } from './filters';
-import { accountIcon, kindGroup, KINDS } from './kinds';
-import type { TransactionRow } from '../../../shared/dashboard';
-import classes from './Dashboard.module.css';
+import { useBaseCurrency } from '../currency';
+import { today } from '../filters';
+import { accountIcon, kindGroup, KINDS } from '../kinds';
+import { ReceiptsModal } from './ReceiptsModal';
+import type { TransactionRow } from '@/shared/dashboard';
+import { RECEIPT_KINDS } from '@/shared/receipts';
+import classes from '../Dashboard.module.css';
 
 interface Props {
   rows: TransactionRow[];
@@ -35,7 +38,15 @@ interface Props {
   accountView: boolean;
 }
 
-function Row({ row, accountView }: { row: TransactionRow; accountView: boolean }) {
+function Row({
+  row,
+  accountView,
+  onReceipts,
+}: {
+  row: TransactionRow;
+  accountView: boolean;
+  onReceipts: (row: TransactionRow) => void;
+}) {
   const group = kindGroup(row.kind);
   const kind = KINDS[group];
   const AccountIcon = accountIcon(row.account, row.currency);
@@ -111,6 +122,30 @@ function Row({ row, accountView }: { row: TransactionRow; accountView: boolean }
         </Text>
       </div>
       <div className={classes.txAmount}>{amount}</div>
+      <div className={classes.txAction}>
+        {(RECEIPT_KINDS as readonly string[]).includes(row.kind) && (
+          <Tooltip label={row.receipt_count ? 'View receipts' : 'Add receipt'} position="left">
+            <Indicator
+              label={row.receipt_count}
+              disabled={row.receipt_count === 0}
+              size={14}
+              offset={3}
+              color="brand"
+            >
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                size="sm"
+                aria-label="Receipts"
+                className={row.receipt_count ? undefined : classes.txActionIdle}
+                onClick={() => onReceipts(row)}
+              >
+                <IconReceipt size={16} />
+              </ActionIcon>
+            </Indicator>
+          </Tooltip>
+        )}
+      </div>
     </div>
   );
 }
@@ -154,6 +189,7 @@ export function TransactionList(props: Props) {
   const { rows, total, loading, hasMore, loadingMore, onLoadMore, search, onSearch, accountView } =
     props;
   const base = useBaseCurrency();
+  const [receiptRow, setReceiptRow] = useState<TransactionRow | null>(null);
   const days = new Map<string, TransactionRow[]>();
 
   for (const row of rows) {
@@ -206,7 +242,12 @@ export function TransactionList(props: Props) {
               <span className={classes.num}>{spent ? formatSigned(spent, base) : ''}</span>
             </div>
             {dayRows.map((row) => (
-              <Row key={row.row_key} row={row} accountView={accountView} />
+              <Row
+                key={row.row_key}
+                row={row}
+                accountView={accountView}
+                onReceipts={setReceiptRow}
+              />
             ))}
           </Fragment>
         );
@@ -219,6 +260,12 @@ export function TransactionList(props: Props) {
           </Button>
         </Center>
       )}
+
+      <ReceiptsModal
+        rowKey={receiptRow?.row_key ?? null}
+        title={receiptRow ? `Receipts · ${receiptRow.category}, ${receiptRow.date}` : 'Receipts'}
+        onClose={() => setReceiptRow(null)}
+      />
     </Paper>
   );
 }

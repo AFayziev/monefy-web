@@ -163,7 +163,7 @@
 
 .tx {
   display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) auto;
+  grid-template-columns: 32px minmax(0, 1fr) auto 28px;
   gap: 12px;
   align-items: center;
   padding: 10px 4px;
@@ -214,9 +214,32 @@
   text-align: right;
 }
 
+/* Receipt button: shown on hover or focus unless the transaction already has receipts. */
+.txAction {
+  display: flex;
+  justify-content: center;
+}
+
+.txActionIdle {
+  opacity: 0;
+}
+
+.tx:hover .txActionIdle,
+.txActionIdle:focus-visible {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .txActionIdle {
+    opacity: 1;
+  }
+}
+
 @container (min-width: 760px) {
   .tx {
-    grid-template-columns: 32px minmax(0, 2fr) minmax(0, 1.2fr) minmax(0, 3fr) minmax(160px, auto);
+    grid-template-columns:
+      32px minmax(0, 2fr) minmax(0, 1.2fr) minmax(0, 3fr) minmax(160px, auto)
+      28px;
     padding: 6px 4px;
   }
 
@@ -245,6 +268,10 @@
     overflow: hidden;
   }
 
+  .txAction {
+    grid-column: 6;
+  }
+
   /* Converted amount sits left of the amount instead of under it. */
   .txAmount {
     grid-column: 5;
@@ -254,4 +281,15 @@
     justify-content: flex-start;
     gap: 8px;
   }
+}
+
+.receiptThumb {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: var(--mantine-radius-md);
+}
+
+.receiptImage {
+  cursor: zoom-in;
 }

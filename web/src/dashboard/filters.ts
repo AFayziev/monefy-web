@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import { useCallback, useState } from 'react';
-import type { KindFilter } from '../../../shared/dashboard';
+import type { KindFilter } from '@/shared/dashboard';
 
 export const ISO_DATE = 'YYYY-MM-DD';
 
@@ -54,9 +54,9 @@ export function presetRange(preset: Preset): [string | null, string | null] {
 
 export function useFilters() {
   const [filters, setFilters] = useState<Filters>(() => {
-    const [from, to] = presetRange('month');
+    const [from, to] = presetRange('week');
 
-    return { preset: 'month', from, to, account: null, category: null, kind: null, q: '' };
+    return { preset: 'week', from, to, account: null, category: null, kind: null, q: '' };
   });
 
   const update = useCallback(

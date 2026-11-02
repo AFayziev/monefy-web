@@ -4,6 +4,7 @@ import { refreshRates } from './rates';
 import { rates } from './routes/rates';
 import { dashboard } from './routes/dashboard';
 import { me } from './routes/me';
+import { receipts } from './routes/receipts';
 import { webhook } from './routes/webhook';
 
 const HTTP_INTERNAL_ERROR = 500;
@@ -24,6 +25,7 @@ app.route('/api/me', me);
 app.route('/api/webhook', webhook);
 app.route('/api/dashboard', dashboard);
 app.route('/api/rates', rates);
+app.route('/api/receipts', receipts);
 
 export default {
   fetch: app.fetch,

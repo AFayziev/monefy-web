@@ -23,12 +23,12 @@ import {
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useRef } from 'react';
 import { CardTitle } from './CardTitle';
-import { formatMoney, formatShort, formatSigned } from '../format';
-import { type Filters, ISO_DATE, PRESETS, startOfWeek, today } from './filters';
-import { useBaseCurrency } from './currency';
-import { categoryIcon } from './kinds';
-import type { Stats } from '../../../shared/dashboard';
-import classes from './Dashboard.module.css';
+import { formatMoney, formatShort, formatSigned } from '../../format';
+import { type Filters, ISO_DATE, PRESETS, startOfWeek, today } from '../filters';
+import { useBaseCurrency } from '../currency';
+import { categoryIcon } from '../kinds';
+import type { Stats } from '@/shared/dashboard';
+import classes from '../Dashboard.module.css';
 
 function Kpi(props: {
   icon: Icon;

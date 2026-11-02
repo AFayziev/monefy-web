@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -5,6 +6,8 @@ import react from '@vitejs/plugin-react';
 // Env comes from the repo-root .env; only variables prefixed PUBLIC_ are exposed to the browser.
 export default defineConfig({
   plugins: [react()],
+  // `@/shared/...` is the repo root's shared folder, which the Worker imports too.
+  resolve: { alias: { '@': fileURLToPath(new URL('..', import.meta.url)) } },
   envDir: '..',
   envPrefix: ['PUBLIC_'],
   server: { proxy: { '/api': 'http://localhost:8787' } },

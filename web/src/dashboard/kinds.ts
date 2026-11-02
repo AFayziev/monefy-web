@@ -28,7 +28,7 @@ import {
   IconWeight,
   type Icon,
 } from '@tabler/icons-react';
-import type { KindFilter } from '../../../shared/dashboard';
+import type { KindFilter } from '@/shared/dashboard';
 
 export const KINDS: Record<KindFilter, { color: string; icon: Icon; label: string }> = {
   expense: { color: 'red', icon: IconArrowDownRight, label: 'Expense' },

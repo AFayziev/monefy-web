@@ -9,7 +9,8 @@ import type {
   Stats,
   TransactionRow,
   TransactionsPage,
-} from '../shared/dashboard';
+} from '@/shared/dashboard';
+import { MAX_RECEIPTS_PER_TRANSACTION, RECEIPT_KINDS, type Receipt } from '@/shared/receipts';
 import type { DashboardFilter } from './schemas';
 
 /** A stored row as the importer needs it to diff against a new export. */
@@ -392,7 +393,8 @@ export function createDb(d1: D1Database) {
             `SELECT t.row_key, t.date, t.account, t.category, t.kind, t.amount, t.currency,
                t.converted_amount, t.converted_currency, t.description,
                c.account AS counter_account, c.amount AS counter_amount,
-               c.currency AS counter_currency
+               c.currency AS counter_currency,
+               (SELECT COUNT(*) FROM receipts r WHERE r.row_key = t.row_key) AS receipt_count
              ${from} ORDER BY t.date DESC, t.rowid DESC LIMIT ? OFFSET ?`,
           )
           .bind(...params, PAGE_SIZE, offset);
@@ -467,6 +469,64 @@ export function createDb(d1: D1Database) {
           days: days.results as DayTotal[],
           heatmap: heatmap.results as { date: string; expense: number }[],
         };
+      },
+    },
+
+    receipts: {
+      async list(rowKey: string): Promise<Receipt[]> {
+        const { results } = await d1
+          .prepare(
+            `SELECT id, content_type AS contentType, size, created_at AS createdAt
+             FROM receipts WHERE row_key = ?1 ORDER BY created_at, rowid`,
+          )
+          .bind(rowKey)
+          .all<Receipt>();
+
+        return results;
+      },
+
+      async find(id: string): Promise<{ contentType: string } | null> {
+        return d1
+          .prepare('SELECT content_type AS contentType FROM receipts WHERE id = ?1')
+          .bind(id)
+          .first<{ contentType: string }>();
+      },
+
+      /**
+       * Attaches a receipt unless the transaction is missing, deleted, not an expense or income, or
+       * already at the limit. The checks and the insert are one statement, so concurrent uploads
+       * can't exceed the limit. Returns whether it was attached.
+       */
+      async add(receipt: {
+        id: string;
+        rowKey: string;
+        contentType: string;
+        size: number;
+      }): Promise<boolean> {
+        const kinds = RECEIPT_KINDS.map((kind) => `'${kind}'`).join(', ');
+        const [inserted] = await d1.batch([
+          d1
+            .prepare(
+              `INSERT INTO receipts (id, row_key, content_type, size)
+               SELECT ?1, row_key, ?3, ?4 FROM transactions
+               WHERE row_key = ?2 AND deleted_at IS NULL AND kind IN (${kinds})
+                 AND (SELECT COUNT(*) FROM receipts WHERE row_key = ?2) < ${MAX_RECEIPTS_PER_TRANSACTION}`,
+            )
+            .bind(receipt.id, receipt.rowKey, receipt.contentType, receipt.size),
+          // The transaction list carries receipt counts, so its cached pages are now stale.
+          d1.prepare(BUMP_VERSION_SQL),
+        ]);
+
+        return inserted.meta.changes > 0;
+      },
+
+      async remove(id: string): Promise<boolean> {
+        const [deleted] = await d1.batch([
+          d1.prepare('DELETE FROM receipts WHERE id = ?1').bind(id),
+          d1.prepare(BUMP_VERSION_SQL),
+        ]);
+
+        return deleted.meta.changes > 0;
       },
     },
 

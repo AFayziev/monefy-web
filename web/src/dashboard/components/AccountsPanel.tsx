@@ -10,12 +10,12 @@ import {
   UnstyledButton,
 } from '@mantine/core';
 import { IconBuildingBank, IconStack2, IconStar, IconStarFilled } from '@tabler/icons-react';
-import { formatBalance, formatMoney } from '../format';
+import { formatBalance, formatMoney } from '../../format';
 import { CardTitle } from './CardTitle';
-import { useBaseCurrency } from './currency';
-import { accountIcon } from './kinds';
-import type { AccountSummary as Account } from '../../../shared/dashboard';
-import classes from './Dashboard.module.css';
+import { useBaseCurrency } from '../currency';
+import { accountIcon } from '../kinds';
+import type { AccountSummary as Account } from '@/shared/dashboard';
+import classes from '../Dashboard.module.css';
 
 interface Props {
   accounts: Account[] | undefined;

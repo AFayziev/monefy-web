@@ -1,5 +1,5 @@
 import * as valibot from 'valibot';
-import { KIND_FILTERS } from '../shared/dashboard';
+import { KIND_FILTERS } from '@/shared/dashboard';
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_NAME_LENGTH = 200;
@@ -66,3 +66,12 @@ export const DriveFile = valibot.object({
 });
 
 export type DriveFile = valibot.InferOutput<typeof DriveFile>;
+
+/** Row keys are `<base36 hash>-<ordinal>`. */
+export const RowKeyParam = valibot.object({
+  rowKey: valibot.pipe(valibot.string(), valibot.regex(/^[0-9a-z]+-\d+$/, 'invalid row key')),
+});
+
+export const ReceiptIdParam = valibot.object({
+  id: valibot.pipe(valibot.string(), valibot.uuid()),
+});

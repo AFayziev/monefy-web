@@ -30,6 +30,8 @@ export interface TransactionRow {
   counter_account: string | null;
   counter_amount: number | null;
   counter_currency: string | null;
+  /** Payment receipt images attached to this transaction. */
+  receipt_count: number;
 }
 
 export interface FlowBucket {

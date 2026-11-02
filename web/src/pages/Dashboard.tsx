@@ -1,13 +1,18 @@
 import { Alert, Button, SimpleGrid, Stack } from '@mantine/core';
 import { IconAlertTriangle } from '@tabler/icons-react';
 import { useCallback, useEffect, useState } from 'react';
-import { AccountsPanel } from '../dashboard/AccountsPanel';
+import { AccountsPanel } from '../dashboard/components/AccountsPanel';
 import { BaseCurrencyContext } from '../dashboard/currency';
-import { FilterBar } from '../dashboard/FilterBar';
+import { FilterBar } from '../dashboard/components/FilterBar';
 import { useFilters } from '../dashboard/filters';
 import { useOverview, useSetDefaultAccount, useStats, useTransactions } from '../dashboard/queries';
-import { ActivityHeatmap, DailyFlowChart, KpiCards, TopCategories } from '../dashboard/StatsCards';
-import { TransactionList } from '../dashboard/TransactionList';
+import {
+  ActivityHeatmap,
+  DailyFlowChart,
+  KpiCards,
+  TopCategories,
+} from '../dashboard/components/StatsCards';
+import { TransactionList } from '../dashboard/components/TransactionList';
 import classes from '../dashboard/Dashboard.module.css';
 
 export default function Dashboard() {

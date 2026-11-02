@@ -11,7 +11,7 @@ export class ApiError extends Error {
 }
 
 /** The server's `{ error, message? }` body when it sent one, otherwise the HTTP status. */
-async function errorMessage(response: Response): Promise<string> {
+export async function errorMessage(response: Response): Promise<string> {
   try {
     const body = (await response.json()) as { error?: string; message?: string };
 

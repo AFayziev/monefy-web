@@ -2,9 +2,9 @@ import { Badge, CloseButton, Group, Paper, SegmentedControl, Select } from '@man
 import { DatePickerInput } from '@mantine/dates';
 import { useState } from 'react';
 import { IconCalendar, IconCategory, IconWallet } from '@tabler/icons-react';
-import { type Filters, PRESETS, type Preset } from './filters';
-import type { KindFilter } from '../../../shared/dashboard';
-import { KINDS } from './kinds';
+import { type Filters, PRESETS, type Preset } from '../filters';
+import type { KindFilter } from '@/shared/dashboard';
+import { KINDS } from '../kinds';
 
 interface Props {
   filters: Filters;

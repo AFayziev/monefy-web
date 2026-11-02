@@ -5,7 +5,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import type { Overview, Stats, TransactionsPage } from '../../../shared/dashboard';
+import type { Overview, Stats, TransactionsPage } from '@/shared/dashboard';
 import { useApiJson } from '../api';
 import { type Filters, toQuery, today } from './filters';
 
