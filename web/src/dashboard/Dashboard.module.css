@@ -92,8 +92,13 @@
 }
 
 /* Activity heatmap */
+/*
+ * A scroller clips on both axes, so the selected cell's 2px outline would be cut off at the edges.
+ * The grid's padding leaves room for it, and the negative margin keeps the layout unchanged.
+ */
 .heatWrap {
   overflow-x: auto;
+  margin: -2px;
 }
 
 .heat {
@@ -102,6 +107,7 @@
   grid-template-rows: repeat(7, 11px);
   gap: 3px;
   width: max-content;
+  padding: 2px;
 }
 
 .cell {

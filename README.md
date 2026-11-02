@@ -37,10 +37,11 @@ The Worker downloads the exported CSV from Drive with a Google service account t
    npx wrangler r2 bucket create monefy-receipts
    ```
 3. In the Cloudflare dashboard: **Workers & Pages → Create → Import a repository**, pick this repo. Set the build command to `npm run build`; keep the default deploy command `npx wrangler deploy`.
-4. Add the secrets **API_KEY**, **CLERK_SECRET_KEY**, **PUBLIC_CLERK_PUBLISHABLE_KEY** and **GOOGLE_SERVICE_ACCOUNT** under the Worker's **Settings → Variables and Secrets**. For the Google key, from the command line:
+4. Add the secrets **API_KEY**, **CLERK_SECRET_KEY**, **PUBLIC_CLERK_PUBLISHABLE_KEY**, **GOOGLE_SERVICE_ACCOUNT**, **EXCHANGE_RATES_URL** and **EXCHANGE_RATES_BASE** under the Worker's **Settings → Variables and Secrets**. For the Google key, from the command line:
    ```sh
    npx wrangler secret put GOOGLE_SERVICE_ACCOUNT < path/to/key.json
    ```
+   Add all of them as **secrets**: `wrangler deploy` deletes any plain-text variable that isn't in `wrangler.jsonc`.
 5. Add the build variable **PUBLIC_CLERK_PUBLISHABLE_KEY** under **Settings → Build → Variables and secrets**.
 
 ## Google Apps Script
