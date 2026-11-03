@@ -1,5 +1,4 @@
-/** Amounts are stored as integer minor units (x100). */
-const MINOR_UNITS_PER_MAJOR = 100;
+import { MINOR_UNITS_PER_MAJOR } from '@/shared/money';
 
 const LOCALE = 'en-US';
 

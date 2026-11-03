@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { handleImportQueue } from './queue';
 import { refreshRates } from './rates';
+import { askRoute } from './routes/ask';
 import { rates } from './routes/rates';
 import { dashboard } from './routes/dashboard';
 import { me } from './routes/me';
@@ -26,6 +27,7 @@ app.route('/api/webhook', webhook);
 app.route('/api/dashboard', dashboard);
 app.route('/api/rates', rates);
 app.route('/api/receipts', receipts);
+app.route('/api/ask', askRoute);
 
 export default {
   fetch: app.fetch,

@@ -60,6 +60,30 @@ export interface Stats {
   heatmap: { date: string; expense: number }[];
 }
 
+export const AGGREGATE_GROUPS = ['month', 'day', 'category', 'account'] as const;
+
+export type AggregateGroup = (typeof AGGREGATE_GROUPS)[number];
+
+/** What categories and accounts are ranked by when there are more than fit. */
+export const AGGREGATE_SORTS = ['expense', 'income'] as const;
+
+export type AggregateSort = (typeof AGGREGATE_SORTS)[number];
+
+export interface AggregateRow {
+  key: string;
+  expense: number;
+  income: number;
+  count: number;
+}
+
+export interface Aggregate {
+  rows: AggregateRow[];
+  /** Over every matching row, not just the returned groups. */
+  totals: { expense: number; income: number; count: number };
+  /** More groups matched than were returned. */
+  truncated: boolean;
+}
+
 export interface TransactionsPage {
   rows: TransactionRow[];
   /** Only on the first page; later pages reuse it. */

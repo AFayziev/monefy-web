@@ -63,5 +63,6 @@
   "preview_urls": true,
   // No keys live in this file. Set these as Worker secrets (dashboard or `npx wrangler secret put <NAME>`):
   // API_KEY, CLERK_SECRET_KEY, PUBLIC_CLERK_PUBLISHABLE_KEY, GOOGLE_SERVICE_ACCOUNT,
-  // EXCHANGE_RATES_URL, EXCHANGE_RATES_BASE
+  // EXCHANGE_RATES_URL, EXCHANGE_RATES_BASE, AI_GATEWAY_ACCOUNT_ID, AI_GATEWAY_ID, CF_AIG_TOKEN,
+  // and optionally AI_CONTEXT_NOTES (private glossary of your category names for the AI assistant)
 }

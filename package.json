@@ -21,6 +21,7 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.4.0",
     "@clerk/hono": "^0.1.95",
     "@hono/standard-validator": "^0.4.1",
     "hono": "^4.6.0",

@@ -1,3 +1,5 @@
+import { MINOR_UNITS_PER_MAJOR } from '@/shared/money';
+
 export type TransactionKind = 'expense' | 'income' | 'initial' | 'transfer_out' | 'transfer_in';
 
 /** The file's content is malformed. Retrying the same file can't succeed. */
@@ -45,8 +47,7 @@ const HEADER_ROW_COUNT = 1;
 /** Line numbers shown in errors are 1-based. */
 const LINE_NUMBER_OFFSET = 1;
 
-/** Amounts are stored in minor units (cents); the export has up to three decimals. */
-const MINOR_UNITS_PER_MAJOR = 100;
+/** The export has up to three decimals; amounts are stored in minor units. */
 /** Thousands separators in the export are spaces, including non-breaking ones. */
 const WHITESPACE = /\s/g;
 /** A signed number with an optional decimal part, separated by a dot or a comma. */

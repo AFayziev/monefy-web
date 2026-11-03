@@ -2,6 +2,9 @@
 
 A web app to sync and view expenses from [Monefy smartphone app](https://www.monefy.com/)
 
+> [!WARNING]
+> **This is a single-user app.** All data belongs to one person and is not separated per user: any signed-in account can see all of it, and can use the AI assistant, which spends the owner's credit. Do not allow public sign-ups. Run your own instance, and add only invited accounts (see [Clerk](#clerk)).
+
 ## Local development
 
 ```sh
@@ -19,6 +22,7 @@ npm run dev                        # runs the Worker and the Vite app together
 
 1. Create an application at [clerk.com](https://clerk.com).
 2. Put the publishable and secret keys in `.env`.
+3. Make the instance invite-only: in the Clerk dashboard, set **Access mode** to **Invite-only**, and invite the accounts that should have access. Nothing in the app checks who is signed in beyond "signed in".
 
 ## Google Drive access
 
@@ -37,11 +41,16 @@ The Worker downloads the exported CSV from Drive with a Google service account t
    npx wrangler r2 bucket create monefy-receipts
    ```
 3. In the Cloudflare dashboard: **Workers & Pages → Create → Import a repository**, pick this repo. Set the build command to `npm run build`; keep the default deploy command `npx wrangler deploy`.
-4. Add the secrets **API_KEY**, **CLERK_SECRET_KEY**, **PUBLIC_CLERK_PUBLISHABLE_KEY**, **GOOGLE_SERVICE_ACCOUNT**, **EXCHANGE_RATES_URL** and **EXCHANGE_RATES_BASE** under the Worker's **Settings → Variables and Secrets**. For the Google key, from the command line:
+4. Add the secrets **API_KEY**, **CLERK_SECRET_KEY**, **PUBLIC_CLERK_PUBLISHABLE_KEY**, **GOOGLE_SERVICE_ACCOUNT**, **EXCHANGE_RATES_URL**, **EXCHANGE_RATES_BASE**, **AI_GATEWAY_ACCOUNT_ID**, **AI_GATEWAY_ID** and **CF_AIG_TOKEN** under the Worker's **Settings → Variables and Secrets**. For the Google key, from the command line:
+
    ```sh
    npx wrangler secret put GOOGLE_SERVICE_ACCOUNT < path/to/key.json
    ```
+
+   Optionally add **AI_CONTEXT_NOTES**: a short private glossary of your own category and account names for the AI assistant (for example, what an oddly named category means). It's a secret so it never lands in the repo.
+
    Add all of them as **secrets**: `wrangler deploy` deletes any plain-text variable that isn't in `wrangler.jsonc`.
+
 5. Add the build variable **PUBLIC_CLERK_PUBLISHABLE_KEY** under **Settings → Build → Variables and secrets**.
 
 ## Google Apps Script

@@ -1,4 +1,11 @@
 import * as valibot from 'valibot';
+import {
+  MAX_HISTORY_MESSAGE_CHARS,
+  MAX_HISTORY_MESSAGES,
+  isAlternating,
+  isWithinTotalLimit,
+  MAX_QUESTION_CHARS,
+} from '@/shared/ask';
 import { KIND_FILTERS } from '@/shared/dashboard';
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -55,6 +62,48 @@ export const StatsQuery = valibot.object({
 });
 
 export const DefaultAccountBody = valibot.object({ account: name });
+
+const HistoryMessage = valibot.object({
+  role: valibot.picklist(['user', 'assistant']),
+  content: valibot.pipe(
+    valibot.string(),
+    valibot.trim(),
+    valibot.minLength(1),
+    valibot.maxLength(MAX_HISTORY_MESSAGE_CHARS),
+  ),
+});
+
+/** The client sends the conversation so far: the Worker keeps no conversation state. */
+export const AskBody = valibot.pipe(
+  valibot.object({
+    question: valibot.pipe(
+      valibot.string(),
+      valibot.trim(),
+      valibot.minLength(1),
+      valibot.maxLength(MAX_QUESTION_CHARS),
+    ),
+    /** The viewer's local day, so "last month" means theirs. */
+    today: isoDate,
+    history: valibot.optional(
+      valibot.pipe(valibot.array(HistoryMessage), valibot.maxLength(MAX_HISTORY_MESSAGES)),
+      [],
+    ),
+  }),
+  valibot.forward(
+    valibot.check(({ history }) => isWithinTotalLimit(history), 'history is too long'),
+    ['history'],
+  ),
+  // The new question follows the history, so it must start with a user turn and end on an answer.
+  valibot.forward(
+    valibot.check(
+      ({ history }) => isAlternating(history),
+      'history must alternate user and assistant, starting with the user',
+    ),
+    ['history'],
+  ),
+);
+
+export type AskBody = valibot.InferOutput<typeof AskBody>;
 
 /** Drive files are passed through to the queue unchanged; their shape is checked there. */
 export const WebhookBody = valibot.object({ files: valibot.array(valibot.unknown()) });

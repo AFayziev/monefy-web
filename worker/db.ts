@@ -2,6 +2,10 @@ import type { ImportPlan } from './import/diff';
 import type { Transaction } from './import/parse';
 import type {
   AccountSummary,
+  Aggregate,
+  AggregateGroup,
+  AggregateSort,
+  AggregateRow,
   CategoryTotal,
   DayTotal,
   FlowBucket,
@@ -284,6 +288,15 @@ function buildWhere(filter: DashboardFilter, alias = ''): Where {
  */
 const amountColumn = (filter: DashboardFilter) => (filter.account ? 'amount' : 'converted_amount');
 
+const GROUP_EXPRESSIONS: Record<AggregateGroup, string> = {
+  month: 'substr(date, 1, 7)',
+  day: 'date',
+  category: 'category',
+  account: 'account',
+};
+
+type TransactionOrder = 'date' | 'amount';
+
 /** The only place that talks to D1: every query in the Worker goes through this client. */
 export function createDb(d1: D1Database) {
   return {
@@ -376,7 +389,15 @@ export function createDb(d1: D1Database) {
        * One page of transactions, newest first. A paired transfer is one row: without an account
        * filter only its outgoing leg is listed, carrying the other leg as `counter_*`.
        */
-      async transactions(filter: DashboardFilter, offset: number): Promise<TransactionsPage> {
+      async transactions(
+        filter: DashboardFilter,
+        offset: number,
+        { order = 'date', limit = PAGE_SIZE }: { order?: TransactionOrder; limit?: number } = {},
+      ): Promise<TransactionsPage> {
+        const orderBy =
+          order === 'amount'
+            ? `ABS(t.${amountColumn(filter)}) DESC, t.date DESC, t.rowid DESC`
+            : 't.date DESC, t.rowid DESC';
         const where = buildWhere(filter, 't');
         // The incoming leg is hidden only when its outgoing partner is listed instead.
         const partner = buildWhere(filter, 'c');
@@ -395,15 +416,15 @@ export function createDb(d1: D1Database) {
                c.account AS counter_account, c.amount AS counter_amount,
                c.currency AS counter_currency,
                (SELECT COUNT(*) FROM receipts r WHERE r.row_key = t.row_key) AS receipt_count
-             ${from} ORDER BY t.date DESC, t.rowid DESC LIMIT ? OFFSET ?`,
+             ${from} ORDER BY ${orderBy} LIMIT ? OFFSET ?`,
           )
-          .bind(...params, PAGE_SIZE, offset);
+          .bind(...params, limit, offset);
 
         // Later pages reuse the first page's total, so only the first one counts.
         if (offset > 0) {
           const page = await rows.all<TransactionRow>();
 
-          return { rows: page.results, pageSize: PAGE_SIZE };
+          return { rows: page.results, pageSize: limit };
         }
 
         const [page, count] = await d1.batch([
@@ -414,7 +435,52 @@ export function createDb(d1: D1Database) {
         return {
           rows: page.results as TransactionRow[],
           total: (count.results[0] as { total: number }).total,
-          pageSize: PAGE_SIZE,
+          pageSize: limit,
+        };
+      },
+
+      /**
+       * Expense and income totals per month, day, category or account (transfers and opening
+       * balances are not spending, so they're left out). Periods come back oldest first, the most
+       * recent `limit` of them; categories and accounts by expense, largest first.
+       */
+      async aggregate(
+        filter: DashboardFilter,
+        groupBy: AggregateGroup,
+        limit: number,
+        sortBy: AggregateSort = 'expense',
+      ): Promise<Aggregate> {
+        // `kind` is fixed to expense and income here, so a kind filter is ignored.
+        const where = buildWhere({ ...filter, kind: undefined });
+        const amount = amountColumn(filter);
+        const sums =
+          `-SUM(CASE WHEN kind = 'expense' THEN ${amount} ELSE 0 END) AS expense, ` +
+          `SUM(CASE WHEN kind = 'income' THEN ${amount} ELSE 0 END) AS income, COUNT(*) AS count`;
+        const scope = `FROM transactions WHERE ${where.sql} AND kind IN ('expense', 'income')`;
+        const timed = groupBy === 'month' || groupBy === 'day';
+        // `sortBy` comes from a closed set, so it is safe to interpolate.
+        const other = sortBy === 'expense' ? 'income' : 'expense';
+        const order = timed ? 'key DESC' : `${sortBy} DESC, ${other} DESC, key`;
+
+        const [groups, totals] = await d1.batch([
+          d1
+            .prepare(
+              `SELECT ${GROUP_EXPRESSIONS[groupBy]} AS key, ${sums} ${scope}
+               GROUP BY key ORDER BY ${order} LIMIT ?`,
+            )
+            .bind(...where.params, limit + 1),
+          d1.prepare(`SELECT ${sums} ${scope}`).bind(...where.params),
+        ]);
+
+        const rows = groups.results as unknown as AggregateRow[];
+        const kept = rows.slice(0, limit);
+        const total = totals.results[0] as Aggregate['totals'];
+
+        return {
+          rows: timed ? kept.reverse() : kept,
+          // SUM over no rows is NULL.
+          totals: { expense: total.expense ?? 0, income: total.income ?? 0, count: total.count },
+          truncated: rows.length > kept.length,
         };
       },
 

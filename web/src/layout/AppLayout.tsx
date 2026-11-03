@@ -8,6 +8,7 @@ import {
   useMantineColorScheme,
 } from '@mantine/core';
 import { IconMoon, IconSun } from '@tabler/icons-react';
+import { AskLauncher } from '../ask/AskDrawer';
 import Logo from '../components/Logo';
 import Dashboard from '../pages/Dashboard';
 
@@ -39,6 +40,7 @@ export default function AppLayout() {
             </Title>
           </Group>
           <Group gap="sm">
+            <AskLauncher />
             <ColorSchemeToggle />
             <UserButton />
           </Group>

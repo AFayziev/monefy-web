@@ -28,6 +28,7 @@ import { type Filters, ISO_DATE, PRESETS, startOfWeek, today } from '../filters'
 import { useBaseCurrency } from '../currency';
 import { categoryIcon } from '../kinds';
 import type { Stats } from '@/shared/dashboard';
+import { MINOR_UNITS_PER_MAJOR } from '@/shared/money';
 import classes from '../Dashboard.module.css';
 
 function Kpi(props: {
@@ -116,7 +117,7 @@ export function KpiCards({ stats, filters }: { stats: Stats | undefined; filters
         color="red"
         title={`Expenses · ${period}`}
         value={formatMoney(expense, base)}
-        sub={`≈ ${formatMoney(Math.round(expense / days / 100) * 100, base)} / day`}
+        sub={`≈ ${formatMoney(Math.round(expense / days / MINOR_UNITS_PER_MAJOR) * MINOR_UNITS_PER_MAJOR, base)} / day`}
       />
       <Kpi
         icon={IconScale}
